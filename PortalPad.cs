@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -6,6 +6,7 @@ public class PortalPad : MonoBehaviour
 {
     [Header("Second Portal")]
     [Space(5)]
+
 
     public Transform portalPosition;
     public Transform portal2Position;
@@ -24,25 +25,18 @@ public class PortalPad : MonoBehaviour
     bool isOnPortalOne = false;
     bool isOnPortalTwo = false;
 
-
-    private void Update()
-    {
-
-        StartTimer(cooldown);
-    }
-
     private void OnTriggerEnter(Collider other)
     {
         timeStamp = Time.time;
 
         if (other.tag == "Portal")
         {
-            isOnPortalOne = true;
+            Invoke("FirstPortal", cooldown);
         }
 
         else if (other.tag == "Portal2")
         {
-            isOnPortalTwo = true;
+            Invoke("SecondPortal", cooldown);
         }
     }
 
@@ -51,34 +45,22 @@ public class PortalPad : MonoBehaviour
 
         if (other.tag == "Portal")
         {
-            isOnPortalOne = false;
+            CancelInvoke("FirstPortal");
         }
 
         else if (other.tag == "Portal2")
         {
-            isOnPortalTwo = false;
+            CancelInvoke("SecondPortal");
         }
     }
 
-    
-
-    void StartTimer(float cooldownTime)
+    void FirstPortal()
     {
-        float timer = 0f;
-
-        if (timer < cooldownTime)
-            timer += Time.deltaTime;
-
-        if (timer == cooldownTime && isOnPortalOne)
-        {
-            player.position = portal2Position.position;
-        }
-        
-        else if (timer < cooldownTime && isOnPortalTwo)
-        {
-            player.position = portalPosition.position;
-        }
+        player.position = portal2Position.position;
     }
 
-
+    void SecondPortal()
+    {
+        player.position = portalPosition.position;
+    }
 }
