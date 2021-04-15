@@ -4,37 +4,38 @@ using UnityEngine;
 
 public class WallRun : MonoBehaviour
 {
-    public Transform orientation;
+    [Header("Movement")]
+    [SerializeField] private Transform orientation;
 
-    [Header("Player")]
-    [Space(5)]
-
-    public Rigidbody rb;
+    [Header("Detection")]
+    [SerializeField] private float wallDistance = .5f;
+    [SerializeField] private float minimumJumpHeight = 1.5f;
 
     [Header("Wall Running")]
-    [Space(5)]
-    
-    public float wallDistance = .5f;
-    public float jumpForce = 5;
-    public float minimumJumpHeight = .5f;
-    private float wallRunGravity;
+    [SerializeField] private float wallRunGravity;
+    [SerializeField] private float wallRunJumpForce;
 
-    bool wallLeft = false;
-    bool wallRight = false;
+    [Header("Camera")]
+    [SerializeField] private Camera cam;
+    [SerializeField] private float fov;
+    [SerializeField] private float wallRunfov;
+    [SerializeField] private float wallRunfovTime;
+    [SerializeField] private float camTilt;
+    [SerializeField] private float camTiltTime;
 
-    RaycastHit leftWall;
-    RaycastHit rightWall;
+    public float tilt { get; private set; }
+
+    private bool wallLeft = false;
+    private bool wallRight = false;
+
+    RaycastHit leftWallHit;
+    RaycastHit rightWallHit;
+
+    private Rigidbody rb;
 
     bool CanWallRun()
     {
         return !Physics.Raycast(transform.position, Vector3.down, minimumJumpHeight);
-    }
-
-
-    void CheckOnWall()
-    {
-        wallLeft = Physics.Raycast(transform.position, -orientation.right, out leftWall, wallDistance);
-        wallRight = Physics.Raycast(transform.position, orientation.right, out rightWall, wallDistance);
     }
 
     private void Start()
@@ -42,9 +43,15 @@ public class WallRun : MonoBehaviour
         rb = GetComponent<Rigidbody>();
     }
 
-    void Update()
+    void CheckWall()
     {
-        CheckOnWall();
+        wallLeft = Physics.Raycast(transform.position, -orientation.right, out leftWallHit, wallDistance);
+        wallRight = Physics.Raycast(transform.position, orientation.right, out rightWallHit, wallDistance);
+    }
+
+    private void Update()
+    {
+        CheckWall();
 
         if (CanWallRun())
         {
@@ -69,30 +76,33 @@ public class WallRun : MonoBehaviour
         }
     }
 
-
-
     void StartWallRun()
     {
         rb.useGravity = false;
 
         rb.AddForce(Vector3.down * wallRunGravity, ForceMode.Force);
 
-        
+        cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, wallRunfov, wallRunfovTime * Time.deltaTime);
+
+        if (wallLeft)
+            tilt = Mathf.Lerp(tilt, -camTilt, camTiltTime * Time.deltaTime);
+        else if (wallRight)
+            tilt = Mathf.Lerp(tilt, camTilt, camTiltTime * Time.deltaTime);
 
 
         if (Input.GetKeyDown(KeyCode.Space))
         {
             if (wallLeft)
             {
-                Vector3 wallRunJumpDirection = transform.up + leftWall.normal;
+                Vector3 wallRunJumpDirection = transform.up + leftWallHit.normal;
                 rb.velocity = new Vector3(rb.velocity.x, 0, rb.velocity.z);
-                rb.AddForce(wallRunJumpDirection * jumpForce * 100, ForceMode.Force);
+                rb.AddForce(wallRunJumpDirection * wallRunJumpForce * 100, ForceMode.Force);
             }
             else if (wallRight)
             {
-                Vector3 wallRunJumpDirection = transform.up + rightWall.normal;
+                Vector3 wallRunJumpDirection = transform.up + rightWallHit.normal;
                 rb.velocity = new Vector3(rb.velocity.x, 0, rb.velocity.z);
-                rb.AddForce(wallRunJumpDirection * jumpForce * 100, ForceMode.Force);
+                rb.AddForce(wallRunJumpDirection * wallRunJumpForce * 100, ForceMode.Force);
             }
         }
     }
@@ -100,5 +110,8 @@ public class WallRun : MonoBehaviour
     void StopWallRun()
     {
         rb.useGravity = true;
+
+        cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, fov, wallRunfovTime * Time.deltaTime);
+        tilt = Mathf.Lerp(tilt, 0, camTiltTime * Time.deltaTime);
     }
 }
